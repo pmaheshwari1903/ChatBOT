@@ -76,6 +76,7 @@ def chat(req: ChatResponse, db: Session = Depends(get_db)):
         )
         reply = response.text
     except Exception as e:
+        print("Gemini error:", e) 
         reply = f"Error: {e}"
 
     bot_msg = ChatMessage(session_id=req.session_id, role="assistant", content=reply)
