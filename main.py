@@ -72,9 +72,10 @@ def chat(req: ChatResponse, db: Session = Depends(get_db)):
 
     try:
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="models/gemini-1.5-flash",
             contents=[req.message],
         )
+
         reply = response.text
     except Exception as e:
         print("❌ Gemini API Error:")
