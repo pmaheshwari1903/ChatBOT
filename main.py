@@ -17,16 +17,17 @@ if not api_key:
 
 print("✅ Loaded Gemini API key:", api_key[:4] + "****")
 
-# Configure Gemini client (no need for 'Client' object)
+# Configure Gemini client
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel("gemini-1.5-flash")  # ✅ correct way
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ----- FASTAPI APP -----
 app = FastAPI()
 
+# Create DB tables
 models.Base.metadata.create_all(bind=engine)
 
-# ----- CORS SETUP -----
+# ----- CORS -----
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,6 +42,7 @@ FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")
 
 @app.get("/", include_in_schema=False)
 def serve_index():
+    """Serve index.html"""
     index_path = os.path.join(FRONTEND_DIR, "index.html")
     if not os.path.exists(index_path):
         return {"error": "index.html not found"}
@@ -58,11 +60,11 @@ def get_db():
         yield db
     finally:
         db.close()
-        
 
+# ----- TEST GEMINI -----
 @app.get("/check-gemini")
 def check_gemini():
-    """Test if Gemini API is working properly."""
+    """Quick Gemini API test."""
     try:
         test_model = genai.GenerativeModel("gemini-1.5-flash")
         response = test_model.generate_content("Say 'Gemini API is working!'")
@@ -70,32 +72,32 @@ def check_gemini():
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-# ----- CHAT ROUTE -----
+# ----- CHAT -----
 @app.post("/chat")
 def chat(req: ChatRequest, db: Session = Depends(get_db)):
-    """Handles chat requests using Gemini model."""
-    user_msg = ChatMessage(session_id=req.session_id, role="user", content=req.message)
-    db.add(user_msg)
+    """Handles chat requests with Gemini model."""
+    # Save user message
+    db.add(ChatMessage(session_id=req.session_id, role="user", content=req.message))
     db.commit()
 
     try:
         response = model.generate_content(req.message)
         reply = response.text
         print(f"✅ Gemini response OK (session={req.session_id})")
-
     except Exception as e:
         print("❌ Gemini API Error:", e)
         reply = "Sorry, something went wrong while contacting the AI. Please try again later."
 
-    bot_msg = ChatMessage(session_id=req.session_id, role="assistant", content=reply)
-    db.add(bot_msg)
+    # Save bot message
+    db.add(ChatMessage(session_id=req.session_id, role="assistant", content=reply))
     db.commit()
 
     return {"reply": reply}
 
-# ----- HISTORY ROUTE -----
+# ----- HISTORY -----
 @app.get("/history/{session_id}")
 def get_history(session_id: str, db: Session = Depends(get_db)):
+    """Get chat history for a session."""
     messages = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).all()
     return [
         {"role": msg.role, "content": msg.content, "timestamp": msg.timestamp}
