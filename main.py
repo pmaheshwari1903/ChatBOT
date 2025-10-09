@@ -101,16 +101,3 @@ def get_history(session_id: str, db: Session = Depends(get_db)):
         {"role": msg.role, "content": msg.content, "timestamp": msg.timestamp}
         for msg in messages
     ]
-
-
-# ----- DEBUG / TEST ROUTE -----
-@app.get("/check-env")
-def check_env():
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        print("❌ GEMINI_API_KEY is missing at runtime!")
-        return {"status": "missing"}
-
-    masked = api_key[:4] + "****"
-    print(f"✅ GEMINI_API_KEY loaded at runtime: {masked}")
-    return {"status": "ok", "prefix": masked}
