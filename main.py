@@ -70,20 +70,27 @@ def get_db():
 @app.post("/chat")
 def chat(req: ChatResponse, db: Session = Depends(get_db)):
     """Handles chat requests between user and Gemini model."""
-    # Save user message
     user_msg = ChatMessage(session_id=req.session_id, role="user", content=req.message)
     db.add(user_msg)
     db.commit()
 
     try:
+        # Call Gemini API
         response = client.models.generate_content(
             model="gemini-1.5-flash",
             contents=[req.message],
         )
         reply = response.text
+
     except Exception as e:
-        print("❌ Gemini API error:", e)
-        reply = f"Error: {e}"
+        # Log detailed error to Vercel (for developers)
+        print("❌ Gemini API Error:")
+        import traceback
+        traceback.print_exc()  # This shows full traceback in logs
+        print("Error details:", str(e))
+
+        # Return safe message to frontend
+        reply = "Sorry, something went wrong while contacting the AI. Please try again later."
 
     # Save bot reply
     bot_msg = ChatMessage(session_id=req.session_id, role="assistant", content=reply)
@@ -91,6 +98,7 @@ def chat(req: ChatResponse, db: Session = Depends(get_db)):
     db.commit()
 
     return {"reply": reply}
+
 
 
 @app.get("/history/{session_id}")
