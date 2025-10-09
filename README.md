@@ -23,7 +23,7 @@ This project allows users to chat with an AI assistant and saves conversation hi
 - **Backend:** FastAPI, SQLAlchemy, Pydantic
 - **Database:** MySQL
 - **API:** Google Gemini API
-- **Frontend:** HTML, JavaScript
+- **Frontend:** HTML, CSS, JavaScript
 - **Environment Management:** python-dotenv
 
 ---
