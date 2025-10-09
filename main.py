@@ -76,14 +76,13 @@ def chat(req: ChatResponse, db: Session = Depends(get_db)):
             contents=[req.message],
         )
         reply = response.text
-        print(f"✅ Gemini response OK (session={req.session_id})")
-
     except Exception as e:
         print("❌ Gemini API Error:")
         import traceback
         traceback.print_exc()
         print("Error details:", str(e))
         reply = "Sorry, something went wrong while contacting the AI. Please try again later."
+
 
     bot_msg = ChatMessage(session_id=req.session_id, role="assistant", content=reply)
     db.add(bot_msg)
