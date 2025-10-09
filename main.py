@@ -1,105 +1,90 @@
 import os
-from fastapi import FastAPI, Depends
-from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Depends, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
-import google.generativeai as genai
-
-import models
+from typing import Optional, Dict, List, Annotated
 from models import ChatMessage
-from database import engine, SessionLocal
+import models
+from database import engine,SessionLocal
+from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
+from google import genai
 
-# ----- ENVIRONMENT SETUP -----
-api_key = os.environ.get("GEMINI_API_KEY")
-if not api_key:
-    raise RuntimeError("❌ GEMINI_API_KEY environment variable is missing")
+load_dotenv()
 
-print("✅ Loaded Gemini API key:", api_key[:4] + "****")
+if "GEMINI_API_KEY" not in os.environ:
+    raise RuntimeError("Please Give GEMINI_API_KEY environment variable")
 
-# Configure Gemini client
-genai.configure(api_key=api_key)
-model = genai.GenerativeModel("gemini-1.5-flash")
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# ----- FASTAPI APP -----
 app = FastAPI()
 
-# Create DB tables
 models.Base.metadata.create_all(bind=engine)
 
-# ----- CORS -----
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
+    allow_origins = ["*"],
+    allow_credentials = True,
+    allow_methods = ["*"],
+    allow_headers = ["*"]
 )
+        
+# Schema:
 
-# ----- FRONTEND -----
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")
-
-@app.get("/", include_in_schema=False)
-def serve_index():
-    """Serve index.html"""
-    index_path = os.path.join(FRONTEND_DIR, "index.html")
-    if not os.path.exists(index_path):
-        return {"error": "index.html not found"}
-    return FileResponse(index_path)
-
-# ----- SCHEMAS -----
-class ChatRequest(BaseModel):
-    message: str
-    session_id: str
-
-# ----- DATABASE -----
+class ChatResponse(BaseModel):
+    message : str
+    session_id : str
+    
+# Db Open and Close
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+        
+# root Check
 
-# ----- TEST GEMINI -----
-@app.get("/check-gemini")
-def check_gemini():
-    """Quick Gemini API test."""
-    try:
-        test_model = genai.GenerativeModel("gemini-1.5-flash")
-        response = test_model.generate_content("Say 'Gemini API is working!'")
-        return {"success": True, "reply": response.text}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+@app.get("/")
+def root():
+    return {"message" : "ChatBot is running"}
 
-# ----- CHAT -----
+
 @app.post("/chat")
-def chat(req: ChatRequest, db: Session = Depends(get_db)):
-    """Handles chat requests with Gemini model."""
-    # Save user message
-    db.add(ChatMessage(session_id=req.session_id, role="user", content=req.message))
+def chat(req: ChatResponse, db: Session = Depends(get_db)):
+    user_msg = ChatMessage(session_id=req.session_id, role="user", content=req.message)
+    db.add(user_msg)
     db.commit()
-
+    
+    
+    # Gemini ko sawal pucha!
     try:
-        response = model.generate_content(req.message)
+        response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[req.message],
+    )
         reply = response.text
-        print(f"✅ Gemini response OK (session={req.session_id})")
     except Exception as e:
-        print("❌ Gemini API Error:", e)
-        reply = "Sorry, something went wrong while contacting the AI. Please try again later."
-
-    # Save bot message
-    db.add(ChatMessage(session_id=req.session_id, role="assistant", content=reply))
+        reply = f"Error : {e}"
+        
+        
+    # gemini ka reply save krenge
+    
+    bot_msg = ChatMessage(session_id = req.session_id, role = "assistant", content = reply)
+    db.add(bot_msg)
     db.commit()
+    
+    return {"reply" : reply}
 
-    return {"reply": reply}
 
-# ----- HISTORY -----
 @app.get("/history/{session_id}")
-def get_history(session_id: str, db: Session = Depends(get_db)):
-    """Get chat history for a session."""
+def get_history(session_id : str, db: Session = Depends(get_db)):
     messages = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).all()
     return [
-        {"role": msg.role, "content": msg.content, "timestamp": msg.timestamp}
+        {
+            "role" : msg.role,
+            "content" : msg.content,
+            "timestamp" : msg.timestamp
+        }
         for msg in messages
     ]
