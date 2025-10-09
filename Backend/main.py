@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from pydantic import BaseModel
 from typing import Optional, Dict, List, Annotated
 from Backend.models import ChatMessage
-import models
+import Backend.models
 from Backend.database import engine,SessionLocal
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
