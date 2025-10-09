@@ -12,13 +12,15 @@ from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 
-# Load environment variables
+# Load environment variables (not used since you provide env vars in Vercel)
 # load_dotenv()
 
-# if "GEMINI_API_KEY" not in os.environ:
-#     raise RuntimeError("Please Give GEMINI_API_KEY environment variable")
+# Get Gemini API key from environment variables
+api_key = os.environ.get("GEMINI_API_KEY")
+if not api_key:
+    raise RuntimeError("GEMINI_API_KEY environment variable is missing")
 
-client = genai.Client()
+client = genai.Client(api_key=api_key)
 
 app = FastAPI()
 
@@ -71,12 +73,12 @@ def chat(req: ChatResponse, db: Session = Depends(get_db)):
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=[req.message],
         )
         reply = response.text
     except Exception as e:
-        print("Gemini error:", e) 
+        print("Gemini error:", e)
         reply = f"Error: {e}"
 
     bot_msg = ChatMessage(session_id=req.session_id, role="assistant", content=reply)
