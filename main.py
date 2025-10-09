@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,12 +13,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 
 # Load environment variables
-load_dotenv()
+# load_dotenv()
 
-if "GEMINI_API_KEY" not in os.environ:
-    raise RuntimeError("Please Give GEMINI_API_KEY environment variable")
+# if "GEMINI_API_KEY" not in os.environ:
+#     raise RuntimeError("Please Give GEMINI_API_KEY environment variable")
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client()
 
 app = FastAPI()
 
