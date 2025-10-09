@@ -19,8 +19,9 @@ from google import genai
 api_key = os.environ.get("GEMINI_API_KEY")
 if not api_key:
     raise RuntimeError("GEMINI_API_KEY environment variable is missing")
-
+print("Loaded Gemini API key:", api_key[:4] + "****")  # Mask most of it
 client = genai.Client(api_key=api_key)
+
 
 app = FastAPI()
 
