@@ -1,6 +1,6 @@
 const API_URL = "http://127.0.0.1:8000"; // FastAPI backend URL
 
-// ✅ Automatically create a unique session ID per user
+// Automatically create a unique session ID per user
 const sessionId =
   localStorage.getItem("chatSessionId") ||
   `session-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -10,7 +10,7 @@ const chatBox = document.getElementById("chat-box");
 const sendBtn = document.getElementById("send-btn");
 const userInput = document.getElementById("user-input");
 
-// ✅ Load previous chat history on page load
+// Load previous chat history on page load
 async function loadHistory() {
   try {
     const res = await fetch(`${API_URL}/history/${sessionId}`);
@@ -28,7 +28,7 @@ async function loadHistory() {
   }
 }
 
-// ✅ Function to add messages to chat box
+// Function to add messages to chat box
 function addMessage(role, content) {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add("message", role === "user" ? "user" : "bot");
@@ -37,7 +37,7 @@ function addMessage(role, content) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// ✅ Function to send message to backend
+// Function to send message to backend
 async function sendMessage() {
   const message = userInput.value.trim();
   if (!message) return;
@@ -64,13 +64,13 @@ async function sendMessage() {
 }
 
 
-// ✅ Event listeners
+// Event listeners
 sendBtn.addEventListener("click", sendMessage);
 userInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendMessage();
 });
 
-// ✅ Load history when page opens
+// Load history when page opens
 window.addEventListener("load", loadHistory);
 
 
