@@ -3,9 +3,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, status
 from pydantic import BaseModel
 from typing import Optional, Dict, List, Annotated
-from models import ChatMessage
+from Backend.models import ChatMessage
 import models
-from database import engine,SessionLocal
+from Backend.database import engine,SessionLocal
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
