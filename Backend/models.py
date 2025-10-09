@@ -1,5 +1,5 @@
 from sqlalchemy import Boolean, Column, Integer, String, Text, DateTime
-from database import Base
+from Backend.database import Base
 import datetime
  
 class ChatMessage(Base):
