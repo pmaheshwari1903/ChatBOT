@@ -70,27 +70,27 @@ class ChatRequest(BaseModel):
 # ─────────────────────────────────────────────
 #  CHAT ROUTE
 # ─────────────────────────────────────────────
-# @app.post("/chat")
-# def chat(req: ChatRequest, db: Session = Depends(get_db)):
-#     """Handle chat request with Gemini"""
-#     db.add(ChatMessage(session_id=req.session_id, role="user", content=req.message))
-#     db.commit()
+@app.post("/chat")
+def chat(req: ChatRequest, db: Session = Depends(get_db)):
+    """Handle chat request with Gemini"""
+    db.add(ChatMessage(session_id=req.session_id, role="user", content=req.message))
+    db.commit()
 
-#     try:
-#         # ✅ Correct model path for google-genai
-#         response = client.models.generate_content(
-#             model="gemini-1.5-flash",
-#             contents=[req.message],
-#         )
-#         reply = response.text or "No response from Gemini."
-#     except Exception as e:
-#         print("❌ Gemini API Error:", e)
-#         reply = "Sorry, something went wrong while contacting the AI. Please try again later."
+    try:
+        # ✅ Correct model path for google-genai
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=[req.message],
+        )
+        reply = response.text or "No response from Gemini."
+    except Exception as e:
+        print("❌ Gemini API Error:", e)
+        reply = "Sorry, something went wrong while contacting the AI. Please try again later."
 
-#     db.add(ChatMessage(session_id=req.session_id, role="assistant", content=reply))
-#     db.commit()
+    db.add(ChatMessage(session_id=req.session_id, role="assistant", content=reply))
+    db.commit()
 
-#     return {"reply": reply}
+    return {"reply": reply}
 
 
 @app.get("/test-gemini")
