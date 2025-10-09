@@ -1,36 +1,39 @@
 import os
-# from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, Depends
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-from models import ChatMessage
-import models
-from database import engine, SessionLocal
 from sqlalchemy.orm import Session
-from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 
-# Load environment variables (not used since you provide env vars in Vercel)
-# load_dotenv()
+import models
+from models import ChatMessage
+from database import engine, SessionLocal
 
+# ----- ENVIRONMENT SETUP -----
 # Get Gemini API key from environment variables
 api_key = os.environ.get("GEMINI_API_KEY")
 if not api_key:
-    raise RuntimeError("GEMINI_API_KEY environment variable is missing")
-print("Loaded Gemini API key:", api_key[:4] + "****")  # Mask most of it
+    raise RuntimeError("❌ GEMINI_API_KEY environment variable is missing")
+
+# Masked print (safe for logs)
+print("✅ Loaded Gemini API key:", api_key[:4] + "****")
+
+# Initialize Gemini client
 client = genai.Client(api_key=api_key)
 
-
+# ----- FASTAPI APP -----
 app = FastAPI()
 
+# Create database tables if not exist
 models.Base.metadata.create_all(bind=engine)
 
-# Allow frontend JS to call backend APIs
+# ----- CORS SETUP -----
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # or restrict to your frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -40,12 +43,11 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")
 
-# Serve static files (CSS, JS)
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 @app.get("/", include_in_schema=False)
 def serve_index():
-    """Serve the frontend's index.html file."""
+    """Serve the frontend index.html file."""
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 
@@ -65,9 +67,10 @@ def get_db():
 
 
 # ----- API ROUTES -----
-
 @app.post("/chat")
 def chat(req: ChatResponse, db: Session = Depends(get_db)):
+    """Handles chat requests between user and Gemini model."""
+    # Save user message
     user_msg = ChatMessage(session_id=req.session_id, role="user", content=req.message)
     db.add(user_msg)
     db.commit()
@@ -79,9 +82,10 @@ def chat(req: ChatResponse, db: Session = Depends(get_db)):
         )
         reply = response.text
     except Exception as e:
-        print("Gemini error:", e)
+        print("❌ Gemini API error:", e)
         reply = f"Error: {e}"
 
+    # Save bot reply
     bot_msg = ChatMessage(session_id=req.session_id, role="assistant", content=reply)
     db.add(bot_msg)
     db.commit()
@@ -91,8 +95,22 @@ def chat(req: ChatResponse, db: Session = Depends(get_db)):
 
 @app.get("/history/{session_id}")
 def get_history(session_id: str, db: Session = Depends(get_db)):
+    """Return conversation history for a given session."""
     messages = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).all()
     return [
         {"role": msg.role, "content": msg.content, "timestamp": msg.timestamp}
         for msg in messages
     ]
+
+
+# ----- DEBUG / TEST ROUTE -----
+@app.get("/check-env")
+def check_env():
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        print("❌ GEMINI_API_KEY is missing at runtime!")
+        return {"status": "missing"}
+
+    masked = api_key[:4] + "****"
+    print(f"✅ GEMINI_API_KEY loaded at runtime: {masked}")
+    return {"status": "ok", "prefix": masked}
