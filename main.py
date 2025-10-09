@@ -58,6 +58,17 @@ def get_db():
         yield db
     finally:
         db.close()
+        
+
+@app.get("/check-gemini")
+def check_gemini():
+    """Test if Gemini API is working properly."""
+    try:
+        test_model = genai.GenerativeModel("gemini-1.5-flash")
+        response = test_model.generate_content("Say 'Gemini API is working!'")
+        return {"success": True, "reply": response.text}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 # ----- CHAT ROUTE -----
 @app.post("/chat")
