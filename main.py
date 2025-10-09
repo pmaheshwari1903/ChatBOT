@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from google import genai
+import google.generativeai as genai
 
 import models
 from models import ChatMessage
@@ -17,8 +17,9 @@ api_key = os.environ.get("GEMINI_API_KEY")
 if not api_key:
     raise RuntimeError("❌ GEMINI_API_KEY environment variable is missing")
 
-client = genai.Client(api_key=api_key)
+print("✅ Loaded Gemini API key:", api_key[:4] + "****")
 
+genai.configure(api_key=api_key)
 # ─────────────────────────────────────────────
 #  FASTAPI APP CONFIG
 # ─────────────────────────────────────────────
