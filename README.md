@@ -93,8 +93,9 @@ This project is MIT Licensed – see LICENSE for details.
 
 
 
-TRY THIS CHAAT BOT : https://chat-bot-git-main-pmaheshwari1903s-projects.vercel.app?_vercel_share=oaJb1uqcbtcwxNgllBTWhQ5JqNeex1gS
-
 ## 🎉 Credits
 
 Developed by PARTH MAHESHWARI. Powered by Google Gemini API, FastAPI, and MySQL.
+
+
+TRY THIS CHAT BOT : https://chat-bot-git-main-pmaheshwari1903s-projects.vercel.app?_vercel_share=oaJb1uqcbtcwxNgllBTWhQ5JqNeex1gS
